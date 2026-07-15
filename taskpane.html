@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Lettersmith</title>
+<script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1612;
+    --ink-soft: #4a4540;
+    --ink-mute: #8a8480;
+    --paper: #faf8f4;
+    --paper-warm: #f3f0ea;
+    --paper-deep: #e8e3d8;
+    --accent: #c4601a;
+    --accent-light: #f5e6d8;
+    --accent-dark: #8c4010;
+    --green: #3a7d44;
+    --green-light: #e8f3ea;
+    --border: rgba(26,22,18,0.12);
+    --border-strong: rgba(26,22,18,0.22);
+    --radius: 8px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    font-size: 13px;
+    line-height: 1.5;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Header */
+  .header {
+    background: var(--paper-warm);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  .logo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 18px;
+    color: var(--ink);
+    letter-spacing: -0.02em;
+  }
+
+  .logo span {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 10px;
+    color: var(--ink-mute);
+    font-weight: 300;
+    letter-spacing: 0.05em;
+    margin-left: 6px;
+  }
+
+  .style-dot {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10px;
+    color: var(--green);
+    font-weight: 500;
+  }
+
+  .style-dot::before {
+    content: '';
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--green);
+  }
+
+  /* Scrollable body */
+  .body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  /* API key section */
+  .key-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .key-row input {
+    flex: 1;
+    font-family: 'DM Sans', monospace;
+    font-size: 11px;
+    padding: 6px 9px;
+    border: 1px solid var(--border-strong);
+    border-radius: 6px;
+    background: #fff;
+    color: var(--ink);
+    outline: none;
+  }
+
+  .key-row input:focus { border-color: var(--accent); }
+
+  .key-saved {
+    display: none;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    color: var(--green);
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .key-saved::before {
+    content: '';
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--green);
+    flex-shrink: 0;
+  }
+
+  .forget-btn {
+    font-size: 10px;
+    color: var(--ink-mute);
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 0;
+    display: none;
+  }
+
+  .forget-btn:hover { color: #c0392b; }
+
+  /* Section label */
+  .label {
+    font-size: 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: var(--ink-mute);
+    margin-bottom: 4px;
+  }
+
+  /* Email preview box */
+  .email-box {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--ink);
+    min-height: 70px;
+    max-height: 110px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .email-box.placeholder { color: var(--ink-mute); font-style: italic; }
+
+  .reload-btn {
+    font-size: 11px;
+    color: var(--accent);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    margin-top: 2px;
+    display: inline-block;
+  }
+
+  /* Context fields */
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .field input {
+    width: 100%;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    padding: 6px 9px;
+    border: 1px solid var(--border-strong);
+    border-radius: 6px;
+    background: #fff;
+    color: var(--ink);
+    outline: none;
+  }
+
+  .field input:focus { border-color: var(--accent); }
+
+  /* Tone pills */
+  .pills { display: flex; flex-wrap: wrap; gap: 5px; }
+
+  .pill {
+    padding: 4px 11px;
+    border: 1px solid var(--border-strong);
+    border-radius: 100px;
+    font-size: 11px;
+    color: var(--ink-soft);
+    background: #fff;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.14s;
+  }
+
+  .pill:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+  .pill.active { background: var(--accent); border-color: var(--accent-dark); color: #fff; font-weight: 500; }
+
+  /* Action buttons */
+  .actions { display: flex; flex-direction: column; gap: 6px; }
+
+  .btn {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 8px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.14s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent-dark);
+  }
+
+  .btn-primary:hover { background: var(--accent-dark); }
+
+  .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+
+  .btn-secondary {
+    background: #fff;
+    color: var(--ink);
+    border-color: var(--border-strong);
+    font-size: 11px;
+  }
+
+  .btn-secondary:hover { background: var(--paper-warm); }
+  .btn:active { transform: scale(0.98); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  /* Status */
+  .status {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--ink-mute);
+    padding: 4px 0;
+  }
+
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ink-mute); flex-shrink: 0; }
+  .dot.loading { background: var(--accent); animation: pulse 0.85s ease-in-out infinite; }
+  .dot.done { background: var(--green); }
+  .dot.error { background: #c0392b; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+  /* Result */
+  .result-box {
+    background: var(--paper-warm);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px;
+    font-size: 12px;
+    line-height: 1.65;
+    color: var(--ink);
+    min-height: 80px;
+    max-height: 160px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    display: none;
+  }
+
+  .result-placeholder {
+    background: var(--paper-warm);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px;
+    min-height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    color: var(--ink-mute);
+    font-style: italic;
+  }
+
+  /* Result actions */
+  .result-actions {
+    display: none;
+    gap: 6px;
+  }
+
+  .btn-insert {
+    flex: 1;
+    background: var(--green-light);
+    color: var(--green);
+    border-color: rgba(58,125,68,0.3);
+    font-size: 11px;
+  }
+
+  .btn-insert:hover { background: #d4ead8; }
+
+  .btn-copy {
+    flex: 1;
+    background: #fff;
+    color: var(--ink-soft);
+    border-color: var(--border-strong);
+    font-size: 11px;
+  }
+
+  .btn-copy:hover { background: var(--paper-warm); }
+
+  /* Divider */
+  hr { border: none; border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">Lettersmith <span>email polisher</span></div>
+  <div class="style-dot">Your style loaded</div>
+</div>
+
+<div class="body">
+
+  <!-- API Key -->
+  <div>
+    <div class="label">Anthropic API key</div>
+    <div class="key-row">
+      <input type="password" id="api-key" placeholder="sk-ant-..." oninput="onKeyInput()" />
+      <span class="key-saved" id="key-saved">Saved</span>
+      <button class="forget-btn" id="forget-btn" onclick="forgetKey()">Forget</button>
+    </div>
+  </div>
+
+  <hr/>
+
+  <!-- Email content -->
+  <div>
+    <div class="label">Email content</div>
+    <div class="email-box placeholder" id="email-preview">Loading from Outlook...</div>
+    <button class="reload-btn" onclick="loadEmail()">↻ Reload from Outlook</button>
+  </div>
+
+  <!-- Context -->
+  <div class="field-row">
+    <div class="field">
+      <div class="label">Recipient</div>
+      <input type="text" id="recipient" placeholder="Client, sub, owner..." />
+    </div>
+    <div class="field">
+      <div class="label">Purpose</div>
+      <input type="text" id="purpose" placeholder="Bid, follow-up..." />
+    </div>
+  </div>
+
+  <!-- Tone -->
+  <div>
+    <div class="label">Tone</div>
+    <div class="pills">
+      <button class="pill active" onclick="selectTone(this,'Professional & warm')">Professional & warm</button>
+      <button class="pill" onclick="selectTone(this,'Formal & concise')">Formal & concise</button>
+      <button class="pill" onclick="selectTone(this,'Friendly & direct')">Friendly & direct</button>
+      <button class="pill" onclick="selectTone(this,'Confident & assertive')">Confident & assertive</button>
+      <button class="pill" onclick="selectTone(this,'Diplomatic & tactful')">Diplomatic & tactful</button>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="actions">
+    <button class="btn btn-primary" id="btn-proofread" onclick="run('proofread')">
+      ✎ Proofread &amp; polish
+    </button>
+    <div class="btn-row">
+      <button class="btn btn-secondary" id="btn-rewrite" onclick="run('rewrite')">↺ Full rewrite</button>
+      <button class="btn btn-secondary" id="btn-subject" onclick="run('subject')">✉ Subject lines</button>
+    </div>
+  </div>
+
+  <!-- Status -->
+  <div class="status" id="status">
+    <div class="dot" id="dot"></div>
+    <span id="status-msg"></span>
+  </div>
+
+  <!-- Result -->
+  <div>
+    <div class="label">Result</div>
+    <div class="result-placeholder" id="result-placeholder">Polished email appears here</div>
+    <div class="result-box" id="result-box"></div>
+  </div>
+
+  <!-- Result actions -->
+  <div class="result-actions" id="result-actions">
+    <button class="btn btn-insert" onclick="insertIntoEmail()">⬆ Insert into email</button>
+    <button class="btn btn-copy" onclick="copyResult()">Copy</button>
+  </div>
+
+</div><!-- end .body -->
+
+<script>
+  // ── Style system prompt ───────────────────────────────────────────────────
+  const STYLE_SYSTEM = `You are an expert business email editor for a construction general contractor in Connecticut.
+
+Your job is to polish or rewrite business emails to match the user's established writing style exactly.
+
+WRITING STYLE PROFILE (extracted from the user's real emails):
+- Tone: Direct, practical, and professional — slightly informal but never casual or sloppy
+- Sentence structure: Short to medium sentences. Gets to the point fast. No fluff.
+- Openings: Jump straight to purpose — no lengthy preamble. Often starts with the recipient's name and a quick context line.
+- Closings: Brief. "Let me know", "Let me know if you have any questions", "Thanks" — never flowery sign-offs.
+- Language: Plain, clear construction-industry English. Uses specific project details, scope items, and trade references naturally.
+- Lists: Uses bullet points or numbered items when listing scope, quantities, or multiple action items — keeps them tight.
+- Numbers/costs: States them clearly and confidently. Includes units (SF, CY, LF, dollar amounts).
+- Urgency: When timing matters, says so plainly — "sooner than later", "in the next couple weeks", "by close of business today".
+- Hedging: Minimal. Commits to information while noting genuine uncertainties.
+- Filler to avoid: No "I hope this email finds you well", no "please don't hesitate", no excessive exclamation points.
+
+BUSINESS CONTEXT: General contracting, subcontractor bid solicitation, client communication, project management emails.
+
+RULES:
+- Preserve all factual content, numbers, project details, and scope — never invent or omit specifics.
+- Maintain the user's voice — don't over-formalize or over-polish.
+- Fix grammar, spelling, and awkward phrasing but keep the personality.
+- Return ONLY the email body — no explanation, no commentary, no subject line label.`;
+
+  const SUBJECT_SYSTEM = `You are an expert business email writer for a construction general contractor in Connecticut.
+Generate professional, clear subject lines for construction business emails.
+Return a numbered list of 5 subject lines only — no commentary.`;
+  // ─────────────────────────────────────────────────────────────────────────
+
+  const LS_KEY = 'lettersmith_api_key';
+  let tone = 'Professional & warm';
+  let isLoading = false;
+  let currentResult = '';
+
+  // ── Office.js init ────────────────────────────────────────────────────────
+  Office.onReady(function(info) {
+    if (info.host === Office.HostType.Outlook) {
+      loadEmail();
+    }
+    loadSavedKey();
+  });
+
+  function loadEmail() {
+    const item = Office.context.mailbox.item;
+    if (!item) {
+      showEmailPreview('Could not load email. Click Reload to try again.', true);
+      return;
+    }
+
+    // Compose mode — get body
+    if (item.body) {
+      item.body.getAsync(Office.CoercionType.Text, function(result) {
+        if (result.status === Office.AsyncResultStatus.Succeeded) {
+          const text = result.value.trim();
+          showEmailPreview(text || '(Email body is empty)', !text);
+        } else {
+          showEmailPreview('Could not read email body.', true);
+        }
+      });
+    } else if (item.subject !== undefined) {
+      // Read mode — show subject + sender as context
+      const from = item.from ? item.from.displayName : '';
+      const subj = item.subject || '(no subject)';
+      showEmailPreview(`From: ${from}\nSubject: ${subj}\n\n(Open in compose/reply to load full body)`, true);
+    }
+  }
+
+  function showEmailPreview(text, isPlaceholder) {
+    const el = document.getElementById('email-preview');
+    el.textContent = text;
+    el.className = 'email-box' + (isPlaceholder ? ' placeholder' : '');
+  }
+
+  function getEmailText() {
+    const el = document.getElementById('email-preview');
+    return el.classList.contains('placeholder') ? '' : el.textContent.trim();
+  }
+
+  // ── API key persistence ───────────────────────────────────────────────────
+  function loadSavedKey() {
+    try {
+      const saved = localStorage.getItem(LS_KEY);
+      if (saved) {
+        document.getElementById('api-key').value = saved;
+        showSavedState(true);
+      }
+    } catch(e) {}
+  }
+
+  function onKeyInput() {
+    const val = document.getElementById('api-key').value.trim();
+    try {
+      if (val.startsWith('sk-')) {
+        localStorage.setItem(LS_KEY, val);
+        showSavedState(true);
+      } else {
+        localStorage.removeItem(LS_KEY);
+        showSavedState(false);
+      }
+    } catch(e) {}
+  }
+
+  function forgetKey() {
+    try { localStorage.removeItem(LS_KEY); } catch(e) {}
+    document.getElementById('api-key').value = '';
+    showSavedState(false);
+  }
+
+  function showSavedState(saved) {
+    document.getElementById('key-saved').style.display = saved ? 'flex' : 'none';
+    document.getElementById('forget-btn').style.display = saved ? '' : 'none';
+  }
+
+  // ── Tone ──────────────────────────────────────────────────────────────────
+  function selectTone(btn, t) {
+    document.querySelectorAll('.pill').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    tone = t;
+  }
+
+  // ── Run ───────────────────────────────────────────────────────────────────
+  async function run(mode) {
+    if (isLoading) return;
+
+    const email = getEmailText();
+    if (!email) { alert('No email text loaded. Click "Reload from Outlook" and make sure you have a message open.'); return; }
+
+    const apiKey = document.getElementById('api-key').value.trim();
+    if (!apiKey) { alert('Enter your Anthropic API key at the top.'); return; }
+
+    const recipient = document.getElementById('recipient').value.trim();
+    const purpose = document.getElementById('purpose').value.trim();
+    const ctx = (recipient ? ` Recipient: ${recipient}.` : '') + (purpose ? ` Purpose: ${purpose}.` : '');
+
+    let userPrompt, sysPrompt, statusMsg;
+
+    if (mode === 'proofread') {
+      statusMsg = 'Proofreading...';
+      sysPrompt = STYLE_SYSTEM;
+      userPrompt = `Proofread and polish this email. Fix grammar, spelling, and awkward phrasing. Keep my voice and intent intact. Tone: ${tone}.${ctx}\n\nEmail:\n${email}`;
+    } else if (mode === 'rewrite') {
+      statusMsg = 'Rewriting...';
+      sysPrompt = STYLE_SYSTEM;
+      userPrompt = `Fully rewrite this email. Improve structure, clarity, and flow while keeping all facts. Tone: ${tone}.${ctx}\n\nOriginal:\n${email}`;
+    } else {
+      statusMsg = 'Generating subject lines...';
+      sysPrompt = SUBJECT_SYSTEM;
+      userPrompt = `Email:\n${email}\nContext: ${ctx || 'General construction business email.'}\nTone: ${tone}.`;
+    }
+
+    setLoading(true);
+    setStatus('loading', statusMsg);
+    document.getElementById('result-placeholder').style.display = 'none';
+    document.getElementById('result-box').style.display = 'none';
+    document.getElementById('result-actions').style.display = 'none';
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 1024,
+          system: sysPrompt,
+          messages: [{ role: 'user', content: userPrompt }]
+        })
+      });
+
+      const data = await res.json();
+      if (data.error) throw new Error(data.error.message);
+
+      currentResult = (data.content || []).map(b => b.text || '').join('').trim();
+      const box = document.getElementById('result-box');
+      box.textContent = currentResult;
+      box.style.display = '';
+
+      const actions = document.getElementById('result-actions');
+      actions.style.display = mode !== 'subject' ? 'flex' : 'none';
+      if (mode === 'subject') {
+        // Show copy only for subject lines
+        actions.style.display = 'flex';
+        document.querySelector('.btn-insert').style.display = 'none';
+      } else {
+        document.querySelector('.btn-insert').style.display = '';
+      }
+
+      setStatus('done', 'Done');
+    } catch(err) {
+      setStatus('error', 'Error: ' + err.message);
+      document.getElementById('result-placeholder').style.display = 'flex';
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // ── Insert result back into email compose window ───────────────────────────
+  function insertIntoEmail() {
+    if (!currentResult) return;
+    const item = Office.context.mailbox.item;
+    if (!item || !item.body) {
+      alert('Insert only works in compose/reply mode. Copy the text and paste it manually.');
+      return;
+    }
+    item.body.setAsync(currentResult, { coercionType: Office.CoercionType.Text }, function(result) {
+      if (result.status === Office.AsyncResultStatus.Succeeded) {
+        setStatus('done', 'Inserted into email!');
+        setTimeout(() => setStatus('', ''), 2500);
+      } else {
+        alert('Could not insert automatically. Please copy and paste manually.');
+      }
+    });
+  }
+
+  function copyResult() {
+    if (!currentResult) return;
+    navigator.clipboard.writeText(currentResult).then(() => {
+      const btn = document.querySelector('.btn-copy');
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = 'Copy', 1500);
+    });
+  }
+
+  function setLoading(v) {
+    isLoading = v;
+    ['btn-proofread','btn-rewrite','btn-subject'].forEach(id => document.getElementById(id).disabled = v);
+  }
+
+  function setStatus(state, msg) {
+    const el = document.getElementById('status');
+    el.style.display = msg ? 'flex' : 'none';
+    document.getElementById('dot').className = 'dot ' + state;
+    document.getElementById('status-msg').textContent = msg;
+  }
+</script>
+</body>
+</html>
